@@ -1,0 +1,11 @@
+version: "3.8"
+services:
+  runner:
+    image: gitlab/gitlab-runner:latest
+    volumes:
+      - /data/gitlab-runner/var/run/docker.sock:/var/run/docker.sock
+      - /data/gitlab-runner/config/gitlab-runner:/etc/gitlab-runner
+    #privileged: true
+    ports:
+      - "8083-8087:8083"
+    restart: always

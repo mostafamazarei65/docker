@@ -1,0 +1,149 @@
+version: '3.7'
+services:
+  es01:
+    container_name: es01
+    image: elasticsearch:8.2.0
+    environment:
+      - "node.name=es01"
+      - "cluster.name=${CLUSTER_NAME}"
+      - "node.roles=master,remote_cluster_client"
+      - "discovery.seed_hosts=es01,es02,es03"
+      - "cluster.initial_master_nodes=es01, es02"
+      - "ES_JAVA_OPTS=-Xms${ELASTIC_MEM}m -Xmx${ELASTIC_MEM}m"      
+      - "path.data=/usr/share/elasticsearch/data"
+      - "path.logs=/var/log/elasticsearch"
+      - "cluster.routing.allocation.enable:all"
+      - "bootstrap.memory_lock=true"
+      - "action.destructive_requires_name:true" 
+      - "ingest.geoip.downloader.enabled=false"
+      - "http.cors.allow-origin='*'"
+      - "http.cors.enabled=true"
+      - "http.cors.allow-headers=X-Requested-With,X-Auth-Token,Content-Type,Content-Length,Authorization"
+      - "path.repo=/usr/local/lcs/snapshot"
+      - "xpack.security.enabled=false"
+      - "cluster.routing.allocation.disk.threshold_enabled=true"
+      - "cluster.routing.allocation.disk.watermark.flood_stage=500mb"
+      - "cluster.routing.allocation.disk.watermark.low=500mb"
+      - "cluster.routing.allocation.disk.watermark.high=500mb"
+      - "xpack.license.self_generated.type=basic"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - ./log/es01:/var/log/elasticsearch
+      - ./data/es01:/usr/share/elasticsearch/data
+      - ./backup:/usr/local/lcs/snapshot
+    ports:
+      - 9201:9200
+      - 9301:9300
+    networks:
+      - ES_NETWORK
+  es02:
+    container_name: es02
+    image: elasticsearch:8.2.0
+    environment:
+      - "node.name=es02"
+      - "cluster.name=${CLUSTER_NAME}"
+      - "node.roles=master,remote_cluster_client"
+      - "discovery.seed_hosts=es01,es02,es03"
+      - "cluster.initial_master_nodes=es01, es02"
+      - "ES_JAVA_OPTS=-Xms${ELASTIC_MEM}m -Xmx${ELASTIC_MEM}m"      
+      - "path.data=/usr/share/elasticsearch/data"
+      - "path.logs=/var/log/elasticsearch"
+      - "cluster.routing.allocation.enable:all"
+      - "bootstrap.memory_lock=true"
+      - "action.destructive_requires_name:true" 
+      - "ingest.geoip.downloader.enabled=false"
+      - "http.cors.allow-origin='*'"
+      - "http.cors.enabled=true"
+      - "http.cors.allow-headers=X-Requested-With,X-Auth-Token,Content-Type,Content-Length,Authorization"
+      - "path.repo=/usr/local/lcs/snapshot"
+      - "xpack.security.enabled=false"
+      - "cluster.routing.allocation.disk.threshold_enabled=true"
+      - "cluster.routing.allocation.disk.watermark.flood_stage=500mb"
+      - "cluster.routing.allocation.disk.watermark.low=500mb"
+      - "cluster.routing.allocation.disk.watermark.high=500mb"
+      - "xpack.license.self_generated.type=basic"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - ./log/es02:/var/log/elasticsearch
+      - ./data/es02:/usr/share/elasticsearch/data
+      - ./backup:/usr/local/lcs/snapshot
+    ports:
+      - 9202:9200
+      - 9302:9300
+    depends_on:
+      - es01
+    networks:
+      - ES_NETWORK
+    depends_on:
+      - es01
+
+  es03:
+    container_name: es03
+    image: elasticsearch:8.2.0
+    environment:
+      - "node.name=es03"
+      - "cluster.name=${CLUSTER_NAME}"
+      - "node.roles=data,master,voting_only"
+      - "discovery.seed_hosts=es01,es02,es03"
+      - "cluster.initial_master_nodes=es01, es02"
+      - "ES_JAVA_OPTS=-Xms${ELASTIC_MEM}m -Xmx${ELASTIC_MEM}m"      
+      - "path.data=/usr/share/elasticsearch/data"
+      - "path.logs=/var/log/elasticsearch"
+      - "cluster.routing.allocation.enable:all"
+      - "bootstrap.memory_lock=true"
+      - "action.destructive_requires_name:true" 
+      - "ingest.geoip.downloader.enabled=false"
+      - "http.cors.allow-origin='*'"
+      - "http.cors.enabled=true"
+      - "http.cors.allow-headers=X-Requested-With,X-Auth-Token,Content-Type,Content-Length,Authorization"
+      - "path.repo=/usr/local/lcs/snapshot"
+      - "xpack.security.enabled=false"
+      - "cluster.routing.allocation.disk.threshold_enabled=true"
+      - "cluster.routing.allocation.disk.watermark.flood_stage=500mb"
+      - "cluster.routing.allocation.disk.watermark.low=500mb"
+      - "cluster.routing.allocation.disk.watermark.high=500mb"
+      - "xpack.license.self_generated.type=basic"
+      - "xpack.monitoring.collection.enabled=true"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - ./log/es03:/var/log/elasticsearch
+      - ./data/es03:/usr/share/elasticsearch/data
+      - ./backup:/usr/local/lcs/snapshot
+    ports:
+      - 9203:9200
+      - 9303:9300
+    networks:
+      - ES_NETWORK
+  kibana:  
+    image: kibana:8.2.0
+    container_name: kibana
+    environment:
+      ELASTICSEARCH_HOSTS: '["http://${HOST_IP}:9201"]'
+    ports:
+      - 5601:5601
+    links:
+      - es01
+      - es02
+      - es03
+    depends_on:
+      - es01
+      - es02
+    networks:
+      - ES_NETWORK
+
+networks:
+  ES_NETWORK:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 100.20.10.1/8

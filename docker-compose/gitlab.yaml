@@ -1,0 +1,26 @@
+version: "3.8"
+services:
+  gitlab-ce:
+    container_name: gitlab
+    image: gitlab/gitlab-ce:12.9.3
+    ports:
+      - "22:22"
+      - "8080:80"
+      - "4433:443"
+    volumes:
+      - /data/gitlab/etc/gitlab:/etc/gitlab
+      - /data/gitlab/var/log/gitlab:/var/log/gitlab
+      - /data/gitlab/var/opt/gitlab:/var/opt/gitlab
+      - /data/gitlab/sockets:/var/opt/gitlab/gitlab-workhorse/sockets
+    environment:
+    ulimits:
+      nproc: 65535
+      nofile:
+        soft: 70000
+        hard: 100000
+      core: 0
+      sigpending: 62793
+    sysctls:
+      net.core.somaxconn: 1024
+    restart: always
+
